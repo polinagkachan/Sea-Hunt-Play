@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sea Hunt</title>
+  <style>
+    :root {
+      --ocean-deep: #0a4d8c;
+      --ocean-light: #1a8fe3;
+      --cell-water: linear-gradient(135deg, #1e6fbf, #0d5a9e);
+      --accent: #ffd54f;
+      --danger: #ef5350;
+      --success: #66bb6a;
+      --text-light: #e8f4ff;
+      --panel-bg: rgba(255, 255, 255, 0.12);
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-light) 100%);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      touch-action: manipulation;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      opacity: 0.85;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    /* HUD */
+    .hud {
+      width: 100%;
+      max-width: 520px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hud__level {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .hud__stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hud__stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .hud__stat span:first-child {
+      font-size: 1.2rem;
+    }
+
+    .hud__actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Buttons */
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn--primary {
+      background: var(--accent);
+      color: #1a3a5c;
+      box-shadow: 0 4px 12px rgba(255, 213, 79, 0.4);
+    }
+
+    .btn--secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--text-light);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn--sonar {
+      background: linear-gradient(135deg, #26c6da, #00838f);
+      color: white;
+      box-shadow: 0 4px 12px rgba(38, 198, 218, 0.4);
+    }
+
+    .btn--sonar.active {
+      outline: 3px solid var(--accent);
+      animation: sonarBtnPulse 1s ease infinite;
+    }
+
+    @keyframes sonarBtnPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 213, 79, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 213, 79, 0); }
+    }
+
+    /* Toast / sonar feedback */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      z-index: 200;
+      transition: transform 0.35s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Game board */
+    .board-wrapper {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #board {
+      display: grid;
+      gap: 4px;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1;
+      padding: 8px;
+      background: var(--panel-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .cell {
+      position: relative;
+      background: var(--cell-water);
+      background-size: 200% 200%;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1rem, 3.5vw, 1.4rem);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s;
+      animation: wave 4s ease-in-out infinite;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cell:nth-child(odd) { animation-delay: -1s; }
+    .cell:nth-child(3n) { animation-delay: -2s; }
+
+    @keyframes wave {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .cell:hover:not(.cell--revealed) {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .cell--revealed {
+      cursor: default;
+      animation: none;
+    }
+
+    .cell--miss {
+      background: linear-gradient(135deg, #4fc3f7, #0288d1);
+    }
+
+    .cell--miss .cell-icon {
+      animation: splash 0.5s ease;
+    }
+
+    @keyframes splash {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .cell--hit {
+      background: linear-gradient(135deg, #ff7043, #d84315);
+    }
+
+    .cell--hit .cell-icon {
+      animation: fireFlicker 0.6s ease;
+    }
+
+    @keyframes fireFlicker {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2) rotate(5deg); }
+    }
+
+    .cell--sunk {
+      background: linear-gradient(135deg, #78909c, #455a64);
+    }
+
+    .cell--mine {
+      background: linear-gradient(135deg, #ef5350, #b71c1c);
+      animation: mineShake 0.5s ease;
+    }
+
+    @keyframes mineShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+
+    .cell--bonus {
+      background: linear-gradient(135deg, #ffeb3b, #f9a825);
+    }
+
+    .cell--bonus .cell-icon {
+      animation: bonusGlow 0.8s ease;
+    }
+
+    @keyframes bonusGlow {
+      0%, 100% { filter: brightness(1); transform: scale(1); }
+      50% { filter: brightness(1.4); transform: scale(1.3); }
+    }
+
+    /* Hidden ship reveal on defeat */
+    .cell--ship-hidden {
+      background: linear-gradient(135deg, rgba(144, 164, 174, 0.6), rgba(96, 125, 139, 0.6));
+      opacity: 0.7;
+    }
+
+    /* Sonar pulse on cell */
+    .cell--sonar-pulse {
+      animation: sonarPulse 1.2s ease-out !important;
+    }
+
+    @keyframes sonarPulse {
+      0% { box-shadow: inset 0 0 0 0 rgba(38, 198, 218, 0.8), 0 0 0 0 rgba(38, 198, 218, 0.6); }
+      50% { box-shadow: inset 0 0 20px 10px rgba(38, 198, 218, 0.4), 0 0 20px 8px rgba(38, 198, 218, 0.5); }
+      100% { box-shadow: inset 0 0 0 0 rgba(38, 198, 218, 0), 0 0 0 0 rgba(38, 198, 218, 0); }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 20, 50, 0.65);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: linear-gradient(160deg, #1565c0, #0d47a1);
+      border-radius: 20px;
+      padding: 28px 32px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+      transform: scale(0.85);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1);
+    }
+
+    .modal__title {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .modal__stars {
+      font-size: 2.2rem;
+      margin: 12px 0;
+      letter-spacing: 4px;
+    }
+
+    .modal__stats {
+      margin: 16px 0;
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    .modal__actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+
+      .hud {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+
+      .hud__stats {
+        justify-content: center;
+      }
+
+      #board {
+        max-width: 90vw;
+        gap: 3px;
+        padding: 6px;
+      }
+
+      .cell {
+        border-radius: 4px;
+        min-height: 44px;
+      }
+
+      .modal {
+        padding: 22px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🌊 Sea Hunt</h1>
+  <p class="subtitle">Find and sink all enemy ships!</p>
+
+  <div class="hud">
+    <div class="hud__level" id="levelName">Level 1</div>
+    <div class="hud__stats">
+      <div class="hud__stat"><span>🎯</span><span id="shotsLeft">0</span></div>
+      <div class="hud__stat"><span>🚢</span><span id="shipsLeft">0</span></div>
+    </div>
+    <div class="hud__actions">
+      <button class="btn btn--secondary" id="btnRestart">Restart</button>
+      <button class="btn btn--sonar" id="btnSonar">📡 Sonar</button>
+    </div>
+  </div>
+
+  <div class="board-wrapper">
+    <div id="board"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal__title" id="modalTitle">Victory!</div>
+      <div class="modal__stars" id="modalStars"></div>
+      <div class="modal__stats" id="modalStats"></div>
+      <div class="modal__actions">
+        <button class="btn btn--secondary" id="btnModalRestart">Restart</button>
+        <button class="btn btn--primary" id="btnNextLevel">Next Level</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // LEVEL CONFIGURATION
+    // Each level defines: grid size, ship lengths, mines, bonuses, shots.
+    // To add a new level, append an object to this array (see bottom comment).
+    // ============================================================
+    const LEVELS = [
+      { id: 1,  name: 'Calm Waters',    gridSize: 8,  ships: [3, 2, 2],       mines: 1, bonuses: 1, shots: 18 },
+      { id: 2,  name: 'Shallow Reef',   gridSize: 8,  ships: [3, 3, 2],       mines: 1, bonuses: 1, shots: 17 },
+      { id: 3,  name: 'Coral Bay',      gridSize: 8,  ships: [4, 3, 2],       mines: 2, bonuses: 1, shots: 16 },
+      { id: 4,  name: 'Storm Front',    gridSize: 8,  ships: [4, 3, 3],       mines: 2, bonuses: 1, shots: 15 },
+      { id: 5,  name: 'Open Sea',       gridSize: 10, ships: [4, 3, 3, 2],    mines: 2, bonuses: 2, shots: 22 },
+      { id: 6,  name: 'Deep Current',   gridSize: 10, ships: [5, 4, 3, 2],    mines: 2, bonuses: 1, shots: 20 },
+      { id: 7,  name: 'Minefield',      gridSize: 10, ships: [5, 4, 3, 3],    mines: 3, bonuses: 1, shots: 19 },
+      { id: 8,  name: 'Fleet Battle',   gridSize: 10, ships: [5, 4, 4, 3],    mines: 3, bonuses: 1, shots: 18 },
+      { id: 9,  name: 'Iron Waters',    gridSize: 10, ships: [5, 5, 4, 3],    mines: 3, bonuses: 0, shots: 17 },
+      { id: 10, name: 'Naval Siege',    gridSize: 10, ships: [5, 5, 4, 4, 2], mines: 4, bonuses: 1, shots: 16 },
+      { id: 11, name: 'Abyssal Hunt',   gridSize: 10, ships: [5, 5, 5, 4, 3], mines: 4, bonuses: 0, shots: 15 },
+    ];
+
+    const STORAGE_KEY = 'seaHunt_currentLevel';
+
+    const CELL_ICONS = {
+      miss: '💧',
+      hit: '🔥',
+      sunk: '💥',
+      mine: '💣',
+      bonus: '⭐',
+      ship: '🚢',
+    };
+
+    // ============================================================
+    // GameEngine — core game state and logic
+    // ============================================================
+    class GameEngine {
+      constructor() {
+        this.levelIndex = 0;
+        this.gridSize = 8;
+        this.board = [];       // 2D: 'hidden'|'miss'|'hit'|'sunk'|'mine'|'bonus'
+        this.shipMap = [];     // 2D: ship id or -1
+        this.ships = [];       // { id, cells, hits, length }
+        this.shotsLeft = 0;
+        this.totalShots = 0;
+        this.hitsOnShips = 0;
+        this.sonarUsed = false;
+        this.sonarMode = false;
+        this.gameOver = false;
+        this.won = false;
+      }
+
+      /** Load level config, place objects, reset counters */
+      initLevel(levelIndex) {
+        this.levelIndex = levelIndex;
+        const level = LEVELS[levelIndex];
+        this.gridSize = level.gridSize;
+        this.shotsLeft = level.shots;
+        this.totalShots = 0;
+        this.hitsOnShips = 0;
+        this.sonarUsed = false;
+        this.sonarMode = false;
+        this.gameOver = false;
+        this.won = false;
+
+        // Reset grids
+        this.board = Array.from({ length: this.gridSize }, () =>
+          Array(this.gridSize).fill('hidden')
+        );
+        this.shipMap = Array.from({ length: this.gridSize }, () =>
+          Array(this.gridSize).fill(-1)
+        );
+        this.ships = [];
+
+        this._placeLevelObjects(level);
+      }
+
+      /**
+       * Place all ships, mines, and bonuses on the board.
+       * Retries up to 100 times if placement fails.
+       */
+      _placeLevelObjects(level) {
+        for (let attempt = 0; attempt < 100; attempt++) {
+          // Reset placement state
+          this.board = Array.from({ length: this.gridSize }, () =>
+            Array(this.gridSize).fill('hidden')
+          );
+          this.shipMap = Array.from({ length: this.gridSize }, () =>
+            Array(this.gridSize).fill(-1)
+          );
+          this.ships = [];
+
+          const occupied = new Set();
+          let shipsPlaced = true;
+
+          // Place each ship
+          for (let i = 0; i < level.ships.length; i++) {
+            const len = level.ships[i];
+            if (!this._placeShip(i, len, occupied)) {
+              shipsPlaced = false;
+              break;
+            }
+          }
+
+          if (!shipsPlaced) continue;
+
+          // Place mines on free cells (not on ships)
+          const freeCells = this._getFreeCells(occupied);
+          if (freeCells.length < level.mines + level.bonuses) continue;
+
+          this._shuffle(freeCells);
+          for (let m = 0; m < level.mines; m++) {
+            const [r, c] = freeCells[m];
+            this.board[r][c] = 'mine-hidden';
+            occupied.add(`${r},${c}`);
+          }
+          for (let b = 0; b < level.bonuses; b++) {
+            const [r, c] = freeCells[level.mines + b];
+            this.board[r][c] = 'bonus-hidden';
+            occupied.add(`${r},${c}`);
+          }
+
+          return; // success
+        }
+        console.warn('Placement failed after 100 attempts, using fallback');
+      }
+
+      /** Try to place one ship of given length; returns true on success */
+      _placeShip(shipId, length, occupied) {
+        const maxAttempts = 200;
+        for (let a = 0; a < maxAttempts; a++) {
+          const horizontal = Math.random() < 0.5;
+          const row = Math.floor(Math.random() * this.gridSize);
+          const col = Math.floor(Math.random() * this.gridSize);
+          const cells = [];
+
+          for (let i = 0; i < length; i++) {
+            const r = horizontal ? row : row + i;
+            const c = horizontal ? col + i : col;
+            if (r >= this.gridSize || c >= this.gridSize) break;
+            cells.push([r, c]);
+          }
+
+          if (cells.length !== length) continue;
+          if (!this._canPlaceShip(cells, occupied)) continue;
+
+          // Mark ship cells
+          for (const [r, c] of cells) {
+            this.shipMap[r][c] = shipId;
+            occupied.add(`${r},${c}`);
+          }
+          this.ships.push({ id: shipId, cells, hits: 0, length });
+
+          // Mark adjacent cells as blocked for other ships (1-cell spacing)
+          for (const [r, c] of cells) {
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < this.gridSize && nc >= 0 && nc < this.gridSize) {
+                  if (this.shipMap[nr][nc] === -1) {
+                    occupied.add(`${nr},${nc}`);
+                  }
+                }
+              }
+            }
+          }
+          return true;
+        }
+        return false;
+      }
+
+      /** Check ship cells are free and not adjacent to other ships */
+      _canPlaceShip(cells, occupied) {
+        for (const [r, c] of cells) {
+          if (occupied.has(`${r},${c}`)) return false;
+        }
+        return true;
+      }
+
+      _getFreeCells(occupied) {
+        const free = [];
+        for (let r = 0; r < this.gridSize; r++) {
+          for (let c = 0; c < this.gridSize; c++) {
+            if (!occupied.has(`${r},${c}`)) free.push([r, c]);
+          }
+        }
+        return free;
+      }
+
+      _shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      /** Returns true if cell can be targeted */
+      canFireAt(r, c) {
+        if (this.gameOver) return false;
+        const state = this.board[r][c];
+        return state === 'hidden' || state === 'mine-hidden' || state === 'bonus-hidden';
+      }
+
+      /**
+       * Process a shot at (r, c).
+       * Returns result type: 'miss'|'hit'|'sunk'|'mine'|'bonus'
+       */
+      fireAt(r, c) {
+        if (!this.canFireAt(r, c)) return null;
+
+        this.shotsLeft--;
+        this.totalShots++;
+
+        const shipId = this.shipMap[r][c];
+
+        if (shipId >= 0) {
+          // Hit a ship
+          this.hitsOnShips++;
+          const ship = this.ships.find(s => s.id === shipId);
+          ship.hits++;
+
+          if (ship.hits === ship.length) {
+            // Ship sunk — mark all its cells
+            for (const [sr, sc] of ship.cells) {
+              this.board[sr][sc] = 'sunk';
+            }
+            this._checkEnd();
+            return 'sunk';
+          }
+
+          this.board[r][c] = 'hit';
+          this._checkEnd();
+          return 'hit';
+        }
+
+        // Check hidden mine or bonus
+        if (this.board[r][c] === 'mine-hidden') {
+          this.board[r][c] = 'mine';
+          this.shotsLeft -= 2; // penalty: lose 2 extra shots
+          this._checkEnd();
+          return 'mine';
+        }
+
+        if (this.board[r][c] === 'bonus-hidden') {
+          this.board[r][c] = 'bonus';
+          this.shotsLeft += 2; // reward: gain 2 shots
+          this._checkEnd();
+          return 'bonus';
+        }
+
+        // Miss
+        this.board[r][c] = 'miss';
+        this._checkEnd();
+        return 'miss';
+      }
+
+      /** Check win/lose conditions after each shot */
+      _checkEnd() {
+        const allSunk = this.ships.every(s => s.hits === s.length);
+        if (allSunk) {
+          this.gameOver = true;
+          this.won = true;
+          return;
+        }
+        if (this.shotsLeft <= 0) {
+          this.gameOver = true;
+          this.won = false;
+        }
+      }
+
+      /** Sonar: check if any ship cell exists within radius 1 of (r,c) */
+      useSonar(r, c) {
+        if (this.sonarUsed || this.gameOver) return null;
+
+        this.sonarUsed = true;
+        this.sonarMode = false;
+
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < this.gridSize && nc >= 0 && nc < this.gridSize) {
+              if (this.shipMap[nr][nc] >= 0) {
+                return true; // ship nearby
+              }
+            }
+          }
+        }
+        return false; // clear waters
+      }
+
+      getShipsRemaining() {
+        return this.ships.filter(s => s.hits < s.length).length;
+      }
+
+      getAccuracy() {
+        if (this.totalShots === 0) return 0;
+        return Math.round((this.hitsOnShips / this.totalShots) * 100);
+      }
+
+      /** Star rating: 3 = great, 2 = good, 1 = barely made it */
+      calcStars() {
+        const accuracy = this.getAccuracy();
+        if (accuracy >= 70 && this.shotsLeft >= 3) return 3;
+        if (accuracy >= 50 || this.shotsLeft >= 1) return 2;
+        return 1;
+      }
+
+      /** Reveal all ship positions (on defeat) */
+      revealAllShips() {
+        for (const ship of this.ships) {
+          for (const [r, c] of ship.cells) {
+            if (this.board[r][c] === 'hidden') {
+              this.board[r][c] = 'ship-hidden';
+            }
+          }
+        }
+      }
+    }
+
+    // ============================================================
+    // UI Controller
+    // ============================================================
+    const game = new GameEngine();
+
+    const boardEl = document.getElementById('board');
+    const levelNameEl = document.getElementById('levelName');
+    const shotsLeftEl = document.getElementById('shotsLeft');
+    const shipsLeftEl = document.getElementById('shipsLeft');
+    const btnRestart = document.getElementById('btnRestart');
+    const btnSonar = document.getElementById('btnSonar');
+    const toastEl = document.getElementById('toast');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalStars = document.getElementById('modalStars');
+    const modalStats = document.getElementById('modalStats');
+    const btnModalRestart = document.getElementById('btnModalRestart');
+    const btnNextLevel = document.getElementById('btnNextLevel');
+
+    function loadSavedLevel() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) {
+        const idx = parseInt(saved, 10);
+        if (idx >= 0 && idx < LEVELS.length) return idx;
+      }
+      return 0;
+    }
+
+    function saveLevel(index) {
+      localStorage.setItem(STORAGE_KEY, String(index));
+    }
+
+    function startLevel(index) {
+      game.initLevel(index);
+      saveLevel(index);
+      renderBoard();
+      updateHUD();
+      hideModal();
+      btnSonar.disabled = false;
+      btnSonar.classList.remove('active');
+    }
+
+    function updateHUD() {
+      const level = LEVELS[game.levelIndex];
+      levelNameEl.textContent = `Level ${level.id}: ${level.name}`;
+      shotsLeftEl.textContent = game.shotsLeft;
+      shipsLeftEl.textContent = game.getShipsRemaining();
+      btnSonar.disabled = game.sonarUsed || game.gameOver;
+    }
+
+    function renderBoard() {
+      boardEl.style.gridTemplateColumns = `repeat(${game.gridSize}, 1fr)`;
+      boardEl.innerHTML = '';
+
+      for (let r = 0; r < game.gridSize; r++) {
+        for (let c = 0; c < game.gridSize; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          const state = game.board[r][c];
+          applyCellState(cell, state);
+
+          cell.addEventListener('click', () => onCellClick(r, c));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function applyCellState(cell, state) {
+      cell.className = 'cell';
+      const icon = document.createElement('span');
+      icon.className = 'cell-icon';
+
+      switch (state) {
+        case 'miss':
+          cell.classList.add('cell--revealed', 'cell--miss');
+          icon.textContent = CELL_ICONS.miss;
+          break;
+        case 'hit':
+          cell.classList.add('cell--revealed', 'cell--hit');
+          icon.textContent = CELL_ICONS.hit;
+          break;
+        case 'sunk':
+          cell.classList.add('cell--revealed', 'cell--sunk');
+          icon.textContent = CELL_ICONS.sunk;
+          break;
+        case 'mine':
+          cell.classList.add('cell--revealed', 'cell--mine');
+          icon.textContent = CELL_ICONS.mine;
+          break;
+        case 'bonus':
+          cell.classList.add('cell--revealed', 'cell--bonus');
+          icon.textContent = CELL_ICONS.bonus;
+          break;
+        case 'ship-hidden':
+          cell.classList.add('cell--revealed', 'cell--ship-hidden');
+          icon.textContent = CELL_ICONS.ship;
+          break;
+        default:
+          break;
+      }
+
+      if (icon.textContent) cell.appendChild(icon);
+    }
+
+    function updateCell(r, c) {
+      const idx = r * game.gridSize + c;
+      const cell = boardEl.children[idx];
+      if (cell) applyCellState(cell, game.board[r][c]);
+    }
+
+    function onCellClick(r, c) {
+      if (game.gameOver) return;
+
+      // Sonar mode: scan area without firing
+      if (game.sonarMode && !game.sonarUsed) {
+        const idx = r * game.gridSize + c;
+        const cell = boardEl.children[idx];
+        if (cell) {
+          cell.classList.add('cell--sonar-pulse');
+          setTimeout(() => cell.classList.remove('cell--sonar-pulse'), 1200);
+        }
+
+        const found = game.useSonar(r, c);
+        showToast(found ? '📡 Ship nearby!' : '📡 Clear waters');
+        btnSonar.disabled = true;
+        btnSonar.classList.remove('active');
+        updateHUD();
+        return;
+      }
+
+      if (!game.canFireAt(r, c)) return;
+
+      const result = game.fireAt(r, c);
+
+      // Update all cells if ship sunk
+      if (result === 'sunk') {
+        renderBoard();
+      } else {
+        updateCell(r, c);
+      }
+
+      updateHUD();
+
+      if (game.gameOver) {
+        setTimeout(() => showEndModal(), 400);
+      }
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 2500);
+    }
+
+    function showEndModal() {
+      if (game.won) {
+        modalTitle.textContent = '🎉 Victory!';
+        const stars = game.calcStars();
+        modalStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+        modalStats.innerHTML =
+          `Accuracy: <strong>${game.getAccuracy()}%</strong><br>` +
+          `Shots remaining: <strong>${game.shotsLeft}</strong><br>` +
+          `Ships sunk: <strong>${game.ships.length}</strong>`;
+        btnNextLevel.disabled = game.levelIndex >= LEVELS.length - 1;
+        btnNextLevel.style.display = '';
+      } else {
+        modalTitle.textContent = '💀 Defeat';
+        modalStars.textContent = '';
+        modalStats.innerHTML =
+          `Out of shots!<br>` +
+          `Accuracy: <strong>${game.getAccuracy()}%</strong><br>` +
+          `Ships remaining: <strong>${game.getShipsRemaining()}</strong>`;
+        game.revealAllShips();
+        renderBoard();
+        btnNextLevel.disabled = true;
+        btnNextLevel.style.display = 'none';
+      }
+      modalOverlay.classList.add('show');
+    }
+
+    function hideModal() {
+      modalOverlay.classList.remove('show');
+    }
+
+    // Event listeners
+    btnRestart.addEventListener('click', () => startLevel(game.levelIndex));
+    btnModalRestart.addEventListener('click', () => startLevel(game.levelIndex));
+
+    btnNextLevel.addEventListener('click', () => {
+      if (game.levelIndex < LEVELS.length - 1) {
+        startLevel(game.levelIndex + 1);
+      }
+    });
+
+    btnSonar.addEventListener('click', () => {
+      if (game.sonarUsed || game.gameOver) return;
+      game.sonarMode = !game.sonarMode;
+      btnSonar.classList.toggle('active', game.sonarMode);
+      showToast(game.sonarMode ? '📡 Tap a cell to scan' : '');
+    });
+
+    // Start game
+    startLevel(loadSavedLevel());
+
+    /*
+     * ============================================================
+     * HOW THE GAME WORKS
+     * ============================================================
+     *
+     * Sea Hunt is a single-player battleship-style game with missions.
+     *
+     * STRUCTURE:
+     *   - LEVELS[]     — array of level configs (grid, ships, mines, bonuses, shots)
+     *   - GameEngine   — manages board state, placement, shooting, sonar, win/lose
+     *   - UI functions — renderBoard(), updateHUD(), showEndModal()
+     *
+     * FLOW:
+     *   1. initLevel(index) reads LEVELS[index], places ships/mines/bonuses randomly
+     *   2. Player clicks cells → fireAt(r,c) reveals result and updates shots
+     *   3. Sonar (once per level) scans 3×3 area for ships without revealing them
+     *   4. Win = all ships sunk; Lose = shots reach 0
+     *   5. Victory modal shows accuracy, remaining shots, and 1–3 star rating
+     *
+     * HOW TO ADD A NEW LEVEL:
+     *   Append an object to the LEVELS array:
+     *
+     *   {
+     *     id: 12,
+     *     name: 'Deep Trenches',
+     *     gridSize: 10,              // 8 or 10
+     *     ships: [5, 5, 4, 4, 3],   // array of ship lengths
+     *     mines: 5,                  // number of mine cells
+     *     bonuses: 0,                // number of bonus cells
+     *     shots: 14                  // starting shot budget
+     *   }
+     *
+     *   BALANCE TIPS:
+     *   - Total ship cells should be ≤ 35% of grid area (e.g. ≤ 35 on 10×10)
+     *   - shots ≈ shipCells × 1.5, adjusted down for fewer bonuses / up for more mines
+     *   - Test placement: if console warns "Placement failed", reduce ship count or grid crowding
+     *
+     *   Progress is saved in localStorage under key 'seaHunt_currentLevel'.
+     * ============================================================
+     */
+  </script>
+</body>
+</html>
