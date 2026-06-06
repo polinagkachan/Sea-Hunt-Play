@@ -95,6 +95,27 @@
       justify-content: center;
     }
 
+    .hud__hint {
+      width: 100%;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      opacity: 0.88;
+      padding: 8px 10px;
+      background: rgba(38, 198, 218, 0.12);
+      border-radius: 10px;
+      border: 1px solid rgba(38, 198, 218, 0.25);
+    }
+
+    .hud__hint strong {
+      color: #80deea;
+    }
+
+    .hud__hint--used {
+      opacity: 0.55;
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
     /* Buttons */
     .btn {
       border: none;
@@ -412,6 +433,9 @@
       <button class="btn btn--secondary" id="btnRestart">Заново</button>
       <button class="btn btn--sonar" id="btnSonar">📡 Сонар</button>
     </div>
+    <p class="hud__hint" id="sonarHint">
+      <strong>📡 Сонар</strong> — один раз за уровень. Нажмите кнопку «Сонар», затем выберите клетку на поле: сонар проверит область 3×3 вокруг неё и подскажет, есть ли рядом корабль. Выстрел не тратится.
+    </p>
   </div>
 
   <div class="board-wrapper">
@@ -760,6 +784,7 @@
     const shipsLeftEl = document.getElementById('shipsLeft');
     const btnRestart = document.getElementById('btnRestart');
     const btnSonar = document.getElementById('btnSonar');
+    const sonarHintEl = document.getElementById('sonarHint');
     const toastEl = document.getElementById('toast');
     const modalOverlay = document.getElementById('modalOverlay');
     const modalTitle = document.getElementById('modalTitle');
@@ -791,12 +816,28 @@
       btnSonar.classList.remove('active');
     }
 
+    function updateSonarHint() {
+      if (game.sonarUsed) {
+        sonarHintEl.textContent = 'Сонар на этом уровне уже использован.';
+        sonarHintEl.classList.add('hud__hint--used');
+      } else if (game.sonarMode) {
+        sonarHintEl.innerHTML =
+          '<strong>📡 Сонар активен</strong> — нажмите на любую клетку поля, чтобы просканировать область 3×3 вокруг неё.';
+        sonarHintEl.classList.remove('hud__hint--used');
+      } else {
+        sonarHintEl.innerHTML =
+          '<strong>📡 Сонар</strong> — один раз за уровень. Нажмите кнопку «Сонар», затем выберите клетку на поле: сонар проверит область 3×3 вокруг неё и подскажет, есть ли рядом корабль. Выстрел не тратится.';
+        sonarHintEl.classList.remove('hud__hint--used');
+      }
+    }
+
     function updateHUD() {
       const level = LEVELS[game.levelIndex];
       levelNameEl.textContent = `Уровень ${level.id}: ${level.name}`;
       shotsLeftEl.textContent = game.shotsLeft;
       shipsLeftEl.textContent = game.getShipsRemaining();
       btnSonar.disabled = game.sonarUsed || game.gameOver;
+      updateSonarHint();
     }
 
     function renderBoard() {
@@ -951,6 +992,7 @@
       if (game.sonarUsed || game.gameOver) return;
       game.sonarMode = !game.sonarMode;
       btnSonar.classList.toggle('active', game.sonarMode);
+      updateSonarHint();
       showToast(game.sonarMode ? '📡 Нажмите на клетку для сканирования' : '');
     });
 
