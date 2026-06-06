@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -400,17 +400,17 @@
 </head>
 <body>
   <h1>🌊 Sea Hunt</h1>
-  <p class="subtitle">Find and sink all enemy ships!</p>
+  <p class="subtitle">Найди и потопи все вражеские корабли!</p>
 
   <div class="hud">
-    <div class="hud__level" id="levelName">Level 1</div>
+    <div class="hud__level" id="levelName">Уровень 1</div>
     <div class="hud__stats">
       <div class="hud__stat"><span>🎯</span><span id="shotsLeft">0</span></div>
       <div class="hud__stat"><span>🚢</span><span id="shipsLeft">0</span></div>
     </div>
     <div class="hud__actions">
-      <button class="btn btn--secondary" id="btnRestart">Restart</button>
-      <button class="btn btn--sonar" id="btnSonar">📡 Sonar</button>
+      <button class="btn btn--secondary" id="btnRestart">Заново</button>
+      <button class="btn btn--sonar" id="btnSonar">📡 Сонар</button>
     </div>
   </div>
 
@@ -422,12 +422,12 @@
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-      <div class="modal__title" id="modalTitle">Victory!</div>
+      <div class="modal__title" id="modalTitle">Победа!</div>
       <div class="modal__stars" id="modalStars"></div>
       <div class="modal__stats" id="modalStats"></div>
       <div class="modal__actions">
-        <button class="btn btn--secondary" id="btnModalRestart">Restart</button>
-        <button class="btn btn--primary" id="btnNextLevel">Next Level</button>
+        <button class="btn btn--secondary" id="btnModalRestart">Заново</button>
+        <button class="btn btn--primary" id="btnNextLevel">Следующий уровень</button>
       </div>
     </div>
   </div>
@@ -439,17 +439,17 @@
     // To add a new level, append an object to this array (see bottom comment).
     // ============================================================
     const LEVELS = [
-      { id: 1,  name: 'Calm Waters',    gridSize: 8,  ships: [3, 2, 2],       mines: 1, bonuses: 1, shots: 18 },
-      { id: 2,  name: 'Shallow Reef',   gridSize: 8,  ships: [3, 3, 2],       mines: 1, bonuses: 1, shots: 17 },
-      { id: 3,  name: 'Coral Bay',      gridSize: 8,  ships: [4, 3, 2],       mines: 2, bonuses: 1, shots: 16 },
-      { id: 4,  name: 'Storm Front',    gridSize: 8,  ships: [4, 3, 3],       mines: 2, bonuses: 1, shots: 15 },
-      { id: 5,  name: 'Open Sea',       gridSize: 10, ships: [4, 3, 3, 2],    mines: 2, bonuses: 2, shots: 22 },
-      { id: 6,  name: 'Deep Current',   gridSize: 10, ships: [5, 4, 3, 2],    mines: 2, bonuses: 1, shots: 20 },
-      { id: 7,  name: 'Minefield',      gridSize: 10, ships: [5, 4, 3, 3],    mines: 3, bonuses: 1, shots: 19 },
-      { id: 8,  name: 'Fleet Battle',   gridSize: 10, ships: [5, 4, 4, 3],    mines: 3, bonuses: 1, shots: 18 },
-      { id: 9,  name: 'Iron Waters',    gridSize: 10, ships: [5, 5, 4, 3],    mines: 3, bonuses: 0, shots: 17 },
-      { id: 10, name: 'Naval Siege',    gridSize: 10, ships: [5, 5, 4, 4, 2], mines: 4, bonuses: 1, shots: 16 },
-      { id: 11, name: 'Abyssal Hunt',   gridSize: 10, ships: [5, 5, 5, 4, 3], mines: 4, bonuses: 0, shots: 15 },
+      { id: 1,  name: 'Спокойные воды',   gridSize: 8,  ships: [3, 2, 2],       mines: 1, bonuses: 1, shots: 18 },
+      { id: 2,  name: 'Мелководный риф',  gridSize: 8,  ships: [3, 3, 2],       mines: 1, bonuses: 1, shots: 17 },
+      { id: 3,  name: 'Коралловая бухта', gridSize: 8,  ships: [4, 3, 2],       mines: 2, bonuses: 1, shots: 16 },
+      { id: 4,  name: 'Штормовой фронт',  gridSize: 8,  ships: [4, 3, 3],       mines: 2, bonuses: 1, shots: 15 },
+      { id: 5,  name: 'Открытое море',    gridSize: 10, ships: [4, 3, 3, 2],    mines: 2, bonuses: 2, shots: 22 },
+      { id: 6,  name: 'Глубокое течение', gridSize: 10, ships: [5, 4, 3, 2],    mines: 2, bonuses: 1, shots: 20 },
+      { id: 7,  name: 'Минное поле',      gridSize: 10, ships: [5, 4, 3, 3],    mines: 3, bonuses: 1, shots: 19 },
+      { id: 8,  name: 'Морской бой',      gridSize: 10, ships: [5, 4, 4, 3],    mines: 3, bonuses: 1, shots: 18 },
+      { id: 9,  name: 'Железные воды',    gridSize: 10, ships: [5, 5, 4, 3],    mines: 3, bonuses: 0, shots: 17 },
+      { id: 10, name: 'Морская осада',    gridSize: 10, ships: [5, 5, 4, 4, 2], mines: 4, bonuses: 1, shots: 16 },
+      { id: 11, name: 'Охота в бездне',   gridSize: 10, ships: [5, 5, 5, 4, 3], mines: 4, bonuses: 0, shots: 15 },
     ];
 
     const STORAGE_KEY = 'seaHunt_currentLevel';
@@ -793,7 +793,7 @@
 
     function updateHUD() {
       const level = LEVELS[game.levelIndex];
-      levelNameEl.textContent = `Level ${level.id}: ${level.name}`;
+      levelNameEl.textContent = `Уровень ${level.id}: ${level.name}`;
       shotsLeftEl.textContent = game.shotsLeft;
       shipsLeftEl.textContent = game.getShipsRemaining();
       btnSonar.disabled = game.sonarUsed || game.gameOver;
@@ -876,7 +876,7 @@
         }
 
         const found = game.useSonar(r, c);
-        showToast(found ? '📡 Ship nearby!' : '📡 Clear waters');
+        showToast(found ? '📡 Корабль рядом!' : '📡 Чисто');
         btnSonar.disabled = true;
         btnSonar.classList.remove('active');
         updateHUD();
@@ -909,22 +909,22 @@
 
     function showEndModal() {
       if (game.won) {
-        modalTitle.textContent = '🎉 Victory!';
+        modalTitle.textContent = '🎉 Победа!';
         const stars = game.calcStars();
         modalStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
         modalStats.innerHTML =
-          `Accuracy: <strong>${game.getAccuracy()}%</strong><br>` +
-          `Shots remaining: <strong>${game.shotsLeft}</strong><br>` +
-          `Ships sunk: <strong>${game.ships.length}</strong>`;
+          `Точность: <strong>${game.getAccuracy()}%</strong><br>` +
+          `Выстрелов осталось: <strong>${game.shotsLeft}</strong><br>` +
+          `Кораблей потоплено: <strong>${game.ships.length}</strong>`;
         btnNextLevel.disabled = game.levelIndex >= LEVELS.length - 1;
         btnNextLevel.style.display = '';
       } else {
-        modalTitle.textContent = '💀 Defeat';
+        modalTitle.textContent = '💀 Поражение';
         modalStars.textContent = '';
         modalStats.innerHTML =
-          `Out of shots!<br>` +
-          `Accuracy: <strong>${game.getAccuracy()}%</strong><br>` +
-          `Ships remaining: <strong>${game.getShipsRemaining()}</strong>`;
+          `Выстрелы закончились!<br>` +
+          `Точность: <strong>${game.getAccuracy()}%</strong><br>` +
+          `Кораблей осталось: <strong>${game.getShipsRemaining()}</strong>`;
         game.revealAllShips();
         renderBoard();
         btnNextLevel.disabled = true;
@@ -951,7 +951,7 @@
       if (game.sonarUsed || game.gameOver) return;
       game.sonarMode = !game.sonarMode;
       btnSonar.classList.toggle('active', game.sonarMode);
-      showToast(game.sonarMode ? '📡 Tap a cell to scan' : '');
+      showToast(game.sonarMode ? '📡 Нажмите на клетку для сканирования' : '');
     });
 
     // Start game
