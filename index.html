@@ -38,6 +38,8 @@
       --stat-border: rgba(255, 255, 255, 0.08);
       --hint-bg: rgba(61, 213, 243, 0.07);
       --hint-border: rgba(61, 213, 243, 0.18);
+      --tooltip-bg: rgba(6, 24, 44, 0.96);
+      --tooltip-border: rgba(61, 213, 243, 0.35);
       --btn-secondary-bg: rgba(255, 255, 255, 0.08);
       --btn-secondary-border: rgba(255, 255, 255, 0.16);
       --toast-bg: rgba(4, 21, 37, 0.92);
@@ -86,6 +88,8 @@
       --stat-border: rgba(10, 77, 130, 0.1);
       --hint-bg: rgba(61, 213, 243, 0.12);
       --hint-border: rgba(14, 143, 168, 0.25);
+      --tooltip-bg: rgba(255, 255, 255, 0.97);
+      --tooltip-border: rgba(14, 143, 168, 0.35);
       --btn-secondary-bg: rgba(255, 255, 255, 0.7);
       --btn-secondary-border: rgba(10, 77, 130, 0.15);
       --toast-bg: rgba(255, 255, 255, 0.95);
@@ -640,32 +644,124 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .hud__fleet {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--stat-bg);
+      border: 1px solid var(--stat-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .hud__fleet-label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .hud__fleet-ships {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .fleet-ship {
+      display: flex;
+      gap: 2px;
+    }
+
+    .fleet-ship__deck {
+      width: 14px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--cyan);
+      opacity: 0.85;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+
+    .fleet-ship__deck:first-child {
+      border-radius: 4px 2px 2px 4px;
+    }
+
+    .fleet-ship__deck:last-child {
+      border-radius: 2px 4px 4px 2px;
+    }
+
+    .fleet-ship--sunk {
+      opacity: 0.35;
+      position: relative;
+    }
+
+    .fleet-ship--sunk::after {
+      content: '';
+      position: absolute;
+      inset: -2px -4px;
+      background: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 1px),
+        var(--text-muted) calc(50% - 1px),
+        var(--text-muted) calc(50% + 1px),
+        transparent calc(50% + 1px)
+      );
+      pointer-events: none;
+    }
+
+    .fleet-ship--sunk .fleet-ship__deck {
+      background: var(--text-muted);
+    }
+
     .hud__actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
 
-    .hud__hint {
-      font-size: 0.8rem;
-      line-height: 1.5;
-      color: var(--text-muted);
-      padding: 11px 14px;
-      background: var(--hint-bg);
+    .tooltip-host {
+      position: relative;
+    }
+
+    .tooltip-source {
+      display: none;
+    }
+
+    .tooltip-float {
+      position: fixed;
+      z-index: 10000;
+      max-width: min(260px, calc(100vw - 24px));
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      line-height: 1.45;
+      color: var(--text);
+      background: var(--tooltip-bg);
+      border: 1px solid var(--tooltip-border);
       border-radius: var(--radius-sm);
-      border: 1px solid var(--hint-border);
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease, visibility 0.12s ease;
+      text-align: left;
     }
 
-    .hud__hint strong {
-      color: var(--cyan);
-      font-weight: 600;
+    .tooltip-float.is-visible {
+      opacity: 1;
+      visibility: visible;
     }
 
-    .hud__hint--used {
-      background: var(--stat-bg);
-      border-color: var(--stat-border);
-      color: var(--text-muted);
-      opacity: 0.65;
+    .hud__actions .tooltip-host {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hud__actions .tooltip-host .btn {
+      width: 100%;
     }
 
     /* Buttons */
@@ -1311,29 +1407,39 @@
       <div class="hud__top">
         <div class="hud__level" id="levelName">Уровень 1</div>
         <div class="hud__stats">
-          <div class="hud__stat">
+          <div class="hud__stat tooltip-host" id="shotsStat" data-tip-place="top-left">
             <span class="hud__stat-icon">🎯</span>
             <div class="hud__stat-info">
               <span class="hud__stat-label">Выстрелы</span>
               <span class="hud__stat-value" id="shotsLeft">0</span>
             </div>
+            <span class="tooltip-source" id="shotsTooltip"></span>
           </div>
-          <div class="hud__stat">
+          <div class="hud__stat tooltip-host" id="shipsStat" data-tip-place="top-right">
             <span class="hud__stat-icon">🚢</span>
             <div class="hud__stat-info">
               <span class="hud__stat-label">Корабли</span>
               <span class="hud__stat-value" id="shipsLeft">0</span>
             </div>
+            <span class="tooltip-source" id="shipsTooltip"></span>
           </div>
         </div>
       </div>
-      <div class="hud__actions">
-        <button class="btn btn--secondary" id="btnRestart">Заново</button>
-        <button class="btn btn--sonar" id="btnSonar">📡 Сонар</button>
+      <div class="hud__fleet tooltip-host" id="fleetPanel" data-tip-place="bottom-left">
+        <span class="hud__fleet-label">Флот раунда</span>
+        <div class="hud__fleet-ships" id="fleetShips"></div>
+        <span class="tooltip-source" id="fleetTooltip"></span>
       </div>
-      <p class="hud__hint" id="sonarHint">
-        <strong>📡 Сонар</strong> — один раз за уровень. Нажмите кнопку «Сонар», затем выберите клетку на поле: сонар проверит область 3×3 вокруг неё и подскажет, есть ли рядом корабль. Выстрел не тратится.
-      </p>
+      <div class="hud__actions">
+        <div class="tooltip-host" data-tip-place="bottom-left">
+          <button class="btn btn--secondary" id="btnRestart">Заново</button>
+          <span class="tooltip-source" id="restartTooltip">Начать этот уровень заново с новой расстановкой кораблей.</span>
+        </div>
+        <div class="tooltip-host" data-tip-place="top-right">
+          <button class="btn btn--sonar" id="btnSonar">📡 Сонар</button>
+          <span class="tooltip-source" id="sonarTooltip"></span>
+        </div>
+      </div>
     </div>
 
     <div class="board-frame panel" id="boardFrame">
@@ -1345,6 +1451,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="tooltip-float" id="tooltipFloat" role="tooltip" aria-hidden="true"></div>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
@@ -1368,7 +1475,7 @@
     // To add a new level, append an object to this array (see bottom comment).
     // ============================================================
     const LEVELS = [
-      { id: 1,  name: 'Спокойные воды',   gridSize: 8,  ships: [3, 2, 2],       mines: 1, bonuses: 1, shots: 18 },
+      { id: 1,  name: 'Спокойные воды',   gridSize: 8,  ships: [4, 3],          mines: 0, bonuses: 1, shots: 24 },
       { id: 2,  name: 'Мелководный риф',  gridSize: 8,  ships: [3, 3, 2],       mines: 1, bonuses: 1, shots: 17 },
       { id: 3,  name: 'Коралловая бухта', gridSize: 8,  ships: [4, 3, 2],       mines: 2, bonuses: 1, shots: 16 },
       { id: 4,  name: 'Штормовой фронт',  gridSize: 8,  ships: [4, 3, 3],       mines: 2, bonuses: 1, shots: 15 },
@@ -1384,8 +1491,36 @@
     const STORAGE_KEY = 'seaHunt_currentLevel';
     const THEME_KEY = 'seaHunt_theme';
 
+    const DECK_LABELS = {
+      1: { one: 'однопалубный', many: 'однопалубных' },
+      2: { one: 'двухпалубный', many: 'двухпалубных' },
+      3: { one: 'трёхпалубный', many: 'трёхпалубных' },
+      4: { one: 'четырёхпалубный', many: 'четырёхпалубных' },
+      5: { one: 'пятипалубный', many: 'пятипалубных' },
+    };
+
+    function formatFleetDescription(lengths) {
+      const counts = {};
+      for (const len of lengths) {
+        counts[len] = (counts[len] || 0) + 1;
+      }
+      const sorted = Object.keys(counts).map(Number).sort((a, b) => b - a);
+      return sorted.map(len => {
+        const n = counts[len];
+        const label = DECK_LABELS[len] || { one: `${len}-палубный`, many: `${len}-палубных` };
+        const word = n === 1 ? label.one : label.many;
+        return `${n} ${word}`;
+      }).join(', ');
+    }
+
+    function formatFleetRemaining(ships) {
+      const remaining = ships.filter(s => s.hits < s.length).map(s => s.length);
+      if (remaining.length === 0) return 'все потоплены';
+      return formatFleetDescription(remaining);
+    }
+
     const CELL_ICONS = {
-      miss: '💧',
+      miss: '🌊',
       hit: '🔥',
       sunk: '💥',
       mine: '💣',
@@ -1690,7 +1825,12 @@
     const shipsLeftEl = document.getElementById('shipsLeft');
     const btnRestart = document.getElementById('btnRestart');
     const btnSonar = document.getElementById('btnSonar');
-    const sonarHintEl = document.getElementById('sonarHint');
+    const fleetShipsEl = document.getElementById('fleetShips');
+    const shotsTooltipEl = document.getElementById('shotsTooltip');
+    const shipsTooltipEl = document.getElementById('shipsTooltip');
+    const fleetTooltipEl = document.getElementById('fleetTooltip');
+    const sonarTooltipEl = document.getElementById('sonarTooltip');
+    const tooltipFloatEl = document.getElementById('tooltipFloat');
     const toastEl = document.getElementById('toast');
     const modalOverlay = document.getElementById('modalOverlay');
     const modalTitle = document.getElementById('modalTitle');
@@ -1803,19 +1943,141 @@
       setSonarActive(false);
     }
 
-    function updateSonarHint() {
-      if (game.sonarUsed) {
-        sonarHintEl.textContent = 'Сонар на этом уровне уже использован.';
-        sonarHintEl.classList.add('hud__hint--used');
-      } else if (game.sonarMode) {
-        sonarHintEl.innerHTML =
-          '<strong>📡 Сонар активен</strong> — нажмите на любую клетку поля, чтобы просканировать область 3×3 вокруг неё.';
-        sonarHintEl.classList.remove('hud__hint--used');
-      } else {
-        sonarHintEl.innerHTML =
-          '<strong>📡 Сонар</strong> — один раз за уровень. Нажмите кнопку «Сонар», затем выберите клетку на поле: сонар проверит область 3×3 вокруг неё и подскажет, есть ли рядом корабль. Выстрел не тратится.';
-        sonarHintEl.classList.remove('hud__hint--used');
+    function renderFleet() {
+      fleetShipsEl.innerHTML = '';
+      const sortedShips = [...game.ships].sort((a, b) => b.length - a.length);
+      for (const ship of sortedShips) {
+        const el = document.createElement('div');
+        el.className = 'fleet-ship';
+        if (ship.hits >= ship.length) el.classList.add('fleet-ship--sunk');
+        for (let i = 0; i < ship.length; i++) {
+          const deck = document.createElement('span');
+          deck.className = 'fleet-ship__deck';
+          el.appendChild(deck);
+        }
+        fleetShipsEl.appendChild(el);
       }
+    }
+
+    let activeTooltipHost = null;
+
+    function updateTooltips() {
+      const level = LEVELS[game.levelIndex];
+      const remaining = game.getShipsRemaining();
+
+      shotsTooltipEl.textContent =
+        `Осталось выстрелов: ${game.shotsLeft}. Каждый выстрел тратит 1 заряд. ` +
+        `Бонус ⭐ даёт +2 выстрела, мина 💣 отнимает ещё 2.`;
+
+      shipsTooltipEl.textContent =
+        remaining === 0
+          ? 'Все корабли потоплены!'
+          : `Осталось ${remaining} ${remaining === 1 ? 'корабль' : remaining < 5 ? 'корабля' : 'кораблей'}: ${formatFleetRemaining(game.ships)}.`;
+
+      fleetTooltipEl.textContent =
+        `Состав флота на этом уровне: ${formatFleetDescription(level.ships)}.`;
+
+      if (game.sonarUsed) {
+        sonarTooltipEl.textContent = 'Сонар на этом уровне уже использован.';
+      } else if (game.sonarMode) {
+        sonarTooltipEl.textContent =
+          'Сонар активен — нажмите на любую клетку поля, чтобы просканировать область 3×3 вокруг неё.';
+      } else {
+        sonarTooltipEl.textContent =
+          'Сонар — один раз за уровень. Нажмите кнопку, затем выберите клетку: сонар проверит область 3×3 и подскажет, есть ли рядом корабль. Выстрел не тратится.';
+      }
+
+      if (activeTooltipHost) {
+        showTooltipFloat(activeTooltipHost);
+      }
+    }
+
+    function getTooltipText(host) {
+      const source = host.querySelector('.tooltip-source');
+      return source ? source.textContent.trim() : '';
+    }
+
+    function positionTooltipFloat(host, place) {
+      const rect = host.getBoundingClientRect();
+      const tipRect = tooltipFloatEl.getBoundingClientRect();
+      const gap = 10;
+      const pad = 12;
+      let top;
+      let left;
+
+      switch (place) {
+        case 'top-left':
+          top = rect.top - tipRect.height - gap;
+          left = rect.left;
+          break;
+        case 'top-right':
+          top = rect.top - tipRect.height - gap;
+          left = rect.right - tipRect.width;
+          break;
+        case 'bottom-left':
+          top = rect.bottom + gap;
+          left = rect.left;
+          break;
+        case 'bottom-right':
+          top = rect.bottom + gap;
+          left = rect.right - tipRect.width;
+          break;
+        default:
+          top = rect.bottom + gap;
+          left = rect.left;
+      }
+
+      left = Math.max(pad, Math.min(left, window.innerWidth - tipRect.width - pad));
+      top = Math.max(pad, Math.min(top, window.innerHeight - tipRect.height - pad));
+
+      tooltipFloatEl.style.top = `${Math.round(top)}px`;
+      tooltipFloatEl.style.left = `${Math.round(left)}px`;
+    }
+
+    function showTooltipFloat(host) {
+      const text = getTooltipText(host);
+      if (!text) return;
+
+      activeTooltipHost = host;
+      tooltipFloatEl.textContent = text;
+      tooltipFloatEl.classList.add('is-visible');
+      tooltipFloatEl.setAttribute('aria-hidden', 'false');
+
+      const place = host.dataset.tipPlace || 'bottom-left';
+      requestAnimationFrame(() => {
+        if (activeTooltipHost === host) positionTooltipFloat(host, place);
+      });
+    }
+
+    function hideTooltipFloat() {
+      activeTooltipHost = null;
+      tooltipFloatEl.classList.remove('is-visible');
+      tooltipFloatEl.setAttribute('aria-hidden', 'true');
+      tooltipFloatEl.textContent = '';
+    }
+
+    function initTooltipFloat() {
+      document.querySelectorAll('.tooltip-host[data-tip-place]').forEach(host => {
+        const show = () => showTooltipFloat(host);
+        const hide = () => {
+          if (activeTooltipHost === host) hideTooltipFloat();
+        };
+
+        host.addEventListener('mouseenter', show);
+        host.addEventListener('mouseleave', hide);
+        host.addEventListener('focusin', show);
+        host.addEventListener('focusout', (e) => {
+          if (!host.contains(e.relatedTarget)) hide();
+        });
+      });
+
+      window.addEventListener('scroll', () => {
+        if (activeTooltipHost) positionTooltipFloat(activeTooltipHost, activeTooltipHost.dataset.tipPlace || 'bottom-left');
+      }, { passive: true });
+
+      window.addEventListener('resize', () => {
+        if (activeTooltipHost) positionTooltipFloat(activeTooltipHost, activeTooltipHost.dataset.tipPlace || 'bottom-left');
+      });
     }
 
     function updateHUD() {
@@ -1824,7 +2086,8 @@
       shotsLeftEl.textContent = game.shotsLeft;
       shipsLeftEl.textContent = game.getShipsRemaining();
       btnSonar.disabled = game.sonarUsed || game.gameOver;
-      updateSonarHint();
+      renderFleet();
+      updateTooltips();
     }
 
     function renderBoard() {
@@ -1984,13 +2247,14 @@
       game.sonarMode = !game.sonarMode;
       btnSonar.classList.toggle('active', game.sonarMode);
       setSonarActive(game.sonarMode);
-      updateSonarHint();
+      updateTooltips();
       showToast(game.sonarMode ? '📡 Нажмите на клетку для сканирования' : '');
     });
 
     btnTheme.addEventListener('click', toggleTheme);
 
     initTheme();
+    initTooltipFloat();
     startLevel(loadSavedLevel());
 
     /*
